@@ -9,6 +9,7 @@ class TrieNode
 	private:
 		map<char, TrieNode*>	children;
 		unsigned int			count;
+    bool word;
 		
 	public:
 		TrieNode();
@@ -22,6 +23,8 @@ class TrieNode
 		unsigned int	increment();
 		unsigned int	decrement();
 		unsigned int	get_count();
+    void set_word(bool word);
+    bool get_word();
 };
 
 typedef map<char, TrieNode*>::iterator	TrieNodeIterator;

@@ -3,6 +3,7 @@
 TrieNode::TrieNode()
 {
 	this->count = 0;
+  this->word = false;
 }
 
 TrieNode::TrieNode(unsigned int num)
@@ -62,4 +63,14 @@ unsigned int TrieNode::decrement()
 unsigned int TrieNode::get_count()
 {
 	return this->count;
+}
+
+void TrieNode::set_word(bool word)
+{
+  this->word = word;
+}
+
+bool TrieNode::get_word()
+{
+  return word;
 }
