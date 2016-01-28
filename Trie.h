@@ -1,4 +1,6 @@
 #pragma once
+
+#include "types.h"
 #include "TrieNode.h"
 
 #include <deque>
@@ -17,8 +19,8 @@ class Trie
 		
     void anagram_recursively(
 			std::vector<string> const& used,
-			string const& unused,
-			TrieNode* n, 
+		 	LetterCounts const& unused,
+			TrieNode* n,
 			bool consume_all, 
 			size_t* min_wordlet, 
 			size_t* max_wordlet, 

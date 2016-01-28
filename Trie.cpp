@@ -1,8 +1,8 @@
-#include "Trie.h"
-
 #include <cctype>
 #include <cstdint>
 #include <sstream>
+
+#include "Trie.h"
 
 Trie::Trie(string const& name) :
   root(new TrieNode),
@@ -126,7 +126,7 @@ ostream& operator<<(ostream& os, Trie const& t)
 
 void Trie::anagram_recursively(
 	vector<string> const& used,
-	string const& unused,
+	LetterCounts const& unused,
 	TrieNode* n, 
 	bool consume_all, 
 	size_t* min_wordlet, 
@@ -139,19 +139,20 @@ void Trie::anagram_recursively(
 	}
 
 	// Go through all unused string characters
-	for (char c : unused) {
+	for (auto& lc : unused) {
 
-		auto new_n = n->get(c);
+		auto new_n = n->get(lc.first);
 
 		if (new_n) {
 
 			// Our new_used has an extra character being worked on
 			auto new_used = used;
-			new_used.back() += c;
+			new_used.back() += lc.first;
 
 			// Our new unused no longer has this letter
 			auto new_unused = unused;
-			new_unused.erase(find(new_unused.begin(), new_unused.end(), c));
+			new_unused[lc.first]--;
+			if (new_unused[lc.first] <= 0) new_unused.erase(lc.first);
 
 			// Go one level deeper!
 			anagram_recursively(
@@ -168,11 +169,21 @@ void Trie::anagram_recursively(
 	}
 }
 
+void get_letter_counts(string const& str, LetterCounts& counts) {
+	counts.clear();
+	for (char c : str) {
+		counts[c]++;
+	}
+}
+
 deque<vector<string>> Trie::anagrams(string const& str, bool consume_all, size_t* min_wordlet, size_t* max_wordlet) const
 {
   deque<vector<string>> results;
+	
+	LetterCounts counts;
+	get_letter_counts(str, counts);
 
-	anagram_recursively({ "" }, str, root, consume_all, min_wordlet, max_wordlet, results);
+	anagram_recursively({ "" }, counts, root, consume_all, min_wordlet, max_wordlet, results);
 
   return results;
 }
