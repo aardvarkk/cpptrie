@@ -8,7 +8,6 @@ class TrieNode
 {
 	private:
 		map<char, TrieNode*>	children;
-		unsigned int			count;
     bool word;
 		
 	public:
@@ -16,13 +15,10 @@ class TrieNode
 		TrieNode(unsigned int);
 		~TrieNode();
 		
-		TrieNode*		get(char);
-		TrieNode*		put(char);
-		deque<char>		edges();
-		bool			has(char);
-		unsigned int	increment();
-		unsigned int	decrement();
-		unsigned int	get_count();
+		TrieNode* get(char);
+		TrieNode* put(char);
+		deque<char> edges();
+		bool has(char);
     void set_word(bool word);
     bool get_word();
 };

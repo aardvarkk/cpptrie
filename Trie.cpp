@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <sstream>
 
-Trie::Trie(std::string const& name) :
+Trie::Trie(string const& name) :
   root(new TrieNode),
   name(name)
 {
@@ -15,51 +15,47 @@ Trie::~Trie()
 	delete this->root;
 }
 
-void Trie::insert(std::string str)
+void Trie::insert(string str)
 {
 	TrieNode* n = this->root;
 	
 	for (unsigned int i = 0; i < str.length(); i ++)
 		n = n->put(str.at(i));
 	
-	n->increment();
+	n->set_word(true);
 }
 
-bool Trie::has(std::string str)
+bool Trie::has(string str)
 {
 	TrieNode* n = this->reach(str);
-	return n != 0 && n != this->root && n->get_count() > 0;
+	return n && n != this->root;
 }
 
-void Trie::remove(std::string str)
+void Trie::remove(string str)
 {
 	TrieNode* n = this->reach(str);
-	// TODO Cleanup! See if this node is still needed, or any of its parents, etc...
-	if (n)
-		n->decrement();
 }
 
-std::deque<std::string> Trie::search(std::string s) const
+deque<string> Trie::search(string s) const
 {
 	return this->search(s, 0);
 }
 
-std::deque<std::string> Trie::search(std::string s, unsigned int cap) const
+deque<string> Trie::search(string s, unsigned int cap) const
 {
-	std::deque<std::string> results;
+	deque<string> results;
 	
 	TrieNode* n = this->reach(s);
-	
-	if (n == 0)
-		return results;
-	
-	this->search_recursively(s, n, &results, cap);
+
+	if (n) {
+		this->search_recursively(s, n, &results, cap);
+	}
 	
 	return results;
 }
 
-void Trie::search_recursively(std::string s, TrieNode* n,
-		std::deque<std::string>* results, unsigned int cap) const
+void Trie::search_recursively(string s, TrieNode* n,
+		deque<string>* results, unsigned int cap) const
 {	
 	if (n->get_word())
 		results->push_back(s);
@@ -67,7 +63,7 @@ void Trie::search_recursively(std::string s, TrieNode* n,
 	if (cap && results->size() >= cap)
 		return;
 	
-	std::deque<char> edges = n->edges();
+	deque<char> edges = n->edges();
 	
 	for (unsigned int i = 0; i < edges.size(); i++)
 	{
@@ -76,7 +72,7 @@ void Trie::search_recursively(std::string s, TrieNode* n,
 	}
 }
 
-TrieNode* Trie::reach(std::string const& str) const
+TrieNode* Trie::reach(string const& str) const
 {
 	TrieNode* n = this->root;
 	
@@ -85,7 +81,7 @@ TrieNode* Trie::reach(std::string const& str) const
 		char c = str.at(i);
 		
 		if (!n->has(c))
-			return 0;
+			return nullptr;
 		
 		n = n->get(c);
 	}
@@ -93,7 +89,7 @@ TrieNode* Trie::reach(std::string const& str) const
 	return n;
 }
 
-std::string Trie::get_name() const
+string Trie::get_name() const
 {
   return name;
 }
@@ -103,9 +99,8 @@ void add_node(unsigned char const** pdata, TrieNode* root)
   uint8_t children = **pdata; (*pdata)++;
   for (uint8_t i = 0; i < children; ++i) {
     auto c = **pdata;
-    auto child = root->put(std::tolower(c)); (*pdata)++;
-    child->set_word(std::isupper(c) != 0);
-    root->increment();
+    auto child = root->put(tolower(c)); (*pdata)++;
+    child->set_word(isupper(c) != 0);
     add_node(pdata, child);
   }
 }
@@ -113,7 +108,7 @@ void add_node(unsigned char const** pdata, TrieNode* root)
 void Trie::read_static(unsigned char const data[], Trie& t)
 {
   uint8_t len = *data++;
-  std::string name = "";
+  string name = "";
   for (uint8_t i = 0; i < len; ++i) {
     name += *data++;
   }
@@ -124,19 +119,71 @@ void Trie::read_static(unsigned char const data[], Trie& t)
   add_node(&data, t.root);
 }
 
-std::ostream& operator<<(std::ostream& os, Trie const& t)
+ostream& operator<<(ostream& os, Trie const& t)
 {
   return os;
 }
 
-std::deque<std::vector<std::string>> Trie::anagrams(std::string const& str, bool consume_all, size_t* min_wordlet, size_t* max_wordlet) const
+void Trie::anagram_recursively(
+	vector<string> const& used,
+	string const& unused,
+	TrieNode* n, 
+	bool consume_all, 
+	size_t* min_wordlet, 
+	size_t* max_wordlet, 
+	deque<vector<string>>& results
+) const {
+
+	if (n->get_word()) {
+		results.push_back(used);
+	}
+
+	// Go through all unused string characters
+	for (char c : unused) {
+
+		auto new_n = n->get(c);
+
+		if (new_n) {
+
+			// Our new_used has an extra character being worked on
+			auto new_used = used;
+			new_used.back() += c;
+
+			// Our new unused no longer has this letter
+			auto new_unused = unused;
+			new_unused.erase(find(new_unused.begin(), new_unused.end(), c));
+
+			// Go one level deeper!
+			anagram_recursively(
+				new_used,
+				new_unused,
+				new_n,
+				consume_all,
+				min_wordlet,
+				max_wordlet,
+				results
+			);
+		}
+
+	}
+}
+
+deque<vector<string>> Trie::anagrams(string const& str, bool consume_all, size_t* min_wordlet, size_t* max_wordlet) const
 {
-  std::deque<std::vector<std::string>> results;
+  deque<vector<string>> results;
+
+	anagram_recursively({ "" }, str, root, consume_all, min_wordlet, max_wordlet, results);
+
   return results;
 }
 
-std::deque<std::vector<std::string>> Trie::box(std::vector<std::string> const& box, bool consume_all, size_t* min_wordlet, size_t* max_wordlet) const
+deque<vector<string>> Trie::box(vector<string> const& box, bool consume_all, size_t* min_wordlet, size_t* max_wordlet) const
 {
-  std::deque<std::vector<std::string>> results;
+  deque<vector<string>> results;
   return results;
+}
+
+deque<vector<string>> Trie::crossword(string const& str) const {
+  deque<vector<string>> results;
+  return results;	
 }

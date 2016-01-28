@@ -2,13 +2,7 @@
 
 TrieNode::TrieNode()
 {
-	this->count = 0;
   this->word = false;
-}
-
-TrieNode::TrieNode(unsigned int num)
-{
-	this->count = num;
 }
 
 TrieNode::~TrieNode()
@@ -23,7 +17,7 @@ TrieNode* TrieNode::get(char c)
 	if (this->has(c))
 		return this->children[c];
 	else
-		return 0;
+		return nullptr;
 }
 
 TrieNode* TrieNode::put(char c)
@@ -47,22 +41,8 @@ deque<char> TrieNode::edges()
 
 bool TrieNode::has(char c)
 {
-	return this->children.count(c) > 0;
-}
-
-unsigned int TrieNode::increment()
-{
-	return ++this->count;
-}
-
-unsigned int TrieNode::decrement()
-{
-	return this->count == 0 ? 0 : --this->count;
-}
-
-unsigned int TrieNode::get_count()
-{
-	return this->count;
+	auto thing = children.find(c);
+	return children.find(c) != children.end();
 }
 
 void TrieNode::set_word(bool word)

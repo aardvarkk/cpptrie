@@ -15,6 +15,16 @@ class Trie
 		void		search_recursively(std::string, TrieNode*,
 						deque<std::string>*, unsigned int) const;
 		
+    void anagram_recursively(
+			std::vector<string> const& used,
+			string const& unused,
+			TrieNode* n, 
+			bool consume_all, 
+			size_t* min_wordlet, 
+			size_t* max_wordlet, 
+			deque<vector<string>>& results
+  	) const;
+
 	public:
 		Trie(std::string const& name);
 		~Trie();
@@ -24,8 +34,11 @@ class Trie
 		void 			remove(std::string);
 		deque<std::string>	search(std::string) const;
 		deque<std::string>	search(std::string, unsigned int) const;
+    
     deque<std::vector<std::string>> anagrams(std::string const& str, bool consume_all, size_t* min_wordlet, size_t* max_wordlet) const;
+
     deque<std::vector<std::string>> box(std::vector<std::string> const& box, bool consume_all, size_t* min_wordlet, size_t* max_wordlet) const;
+    deque<std::vector<std::string>> crossword(std::string const& str) const;
     std::string get_name() const;
 
     static void read_static(unsigned char const data[], Trie& t);
