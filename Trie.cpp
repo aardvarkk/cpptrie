@@ -140,6 +140,9 @@ void Trie::anagram_recursively(
 	deque<vector<string>>& results
 ) const {
 
+	// Too long!
+	if (max_wordlet && *max_wordlet < used.back().length()) return;
+	
 	// BIG speed saver that also helps stop us from getting duplicate results
 	// We should never be currently working on a word lexically < our last found word!
 	if (used.size() > 1) {
@@ -153,13 +156,23 @@ void Trie::anagram_recursively(
 	// We're at a word boundary... have to branch
 	// Want to check longer words using this as stem, and also just grab this word and use remaining
 	if (n->get_word()) {
-		if (!consume_all || (consume_all && unused.empty())) {
-			results.push_back(used);
+
+		// Not long enough!
+		if (min_wordlet && used.back().length() < *min_wordlet) {
 		}
-		if (!unused.empty()) {
-			auto new_used = used;
-			new_used.push_back("");
-			anagram_recursively(new_used, unused, root, root, consume_all, min_wordlet, max_wordlet, results);
+		// Long enough... check other stuff
+		else {
+			// Valid result?
+			if (!consume_all || (consume_all && unused.empty())) {
+				results.push_back(used);
+			}
+			
+			// More letters left to use, so let's branch to restart
+			if (!unused.empty()) {
+				auto new_used = used;
+				new_used.push_back("");
+				anagram_recursively(new_used, unused, root, root, consume_all, min_wordlet, max_wordlet, results);
+			}
 		}
 	}
 
