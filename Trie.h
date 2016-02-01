@@ -20,12 +20,20 @@ class Trie
     void anagram_recursively(
 			std::vector<string> const& used,
 		 	LetterCounts const& unused,
+			TrieNode* const root,
 			TrieNode* n,
 			bool consume_all, 
 			size_t* min_wordlet, 
 			size_t* max_wordlet, 
 			deque<vector<string>>& results
   	) const;
+	
+		void crossword_recursively(
+		 std::vector<string> const& used,
+		 std::string str,
+		 TrieNode* n,
+		 deque<vector<string>>& results
+		) const;
 
 	public:
 		Trie(std::string const& name);

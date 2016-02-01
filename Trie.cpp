@@ -2,7 +2,12 @@
 #include <cstdint>
 #include <sstream>
 
+#include "string_utils.h"
 #include "Trie.h"
+
+// Anagrams: Order doesn't matter, just letter counts
+// - Word boundaries are branches -> have to check longer words as well as start new words
+// Crossword: Order matters, always consume all input
 
 Trie::Trie(string const& name) :
   root(new TrieNode),
@@ -127,45 +132,61 @@ ostream& operator<<(ostream& os, Trie const& t)
 void Trie::anagram_recursively(
 	vector<string> const& used,
 	LetterCounts const& unused,
-	TrieNode* n, 
-	bool consume_all, 
+	TrieNode* const root,
+	TrieNode* n,
+	bool consume_all,
 	size_t* min_wordlet, 
 	size_t* max_wordlet, 
 	deque<vector<string>>& results
 ) const {
 
+	// BIG speed saver that also helps stop us from getting duplicate results
+	// We should never be currently working on a word lexically < our last found word!
+	if (used.size() > 1) {
+		string const& cur = * used.rbegin();
+		string const& prv = *(used.rbegin()+1);
+		if (!StringUtils::in_search_order(prv, cur)) {
+			return;
+		}
+	}
+	
+	// We're at a word boundary... have to branch
+	// Want to check longer words using this as stem, and also just grab this word and use remaining
 	if (n->get_word()) {
-		results.push_back(used);
+		if (!consume_all || (consume_all && unused.empty())) {
+			results.push_back(used);
+		}
+		if (!unused.empty()) {
+			auto new_used = used;
+			new_used.push_back("");
+			anagram_recursively(new_used, unused, root, root, consume_all, min_wordlet, max_wordlet, results);
+		}
 	}
 
 	// Go through all unused string characters
 	for (auto& lc : unused) {
-
-		auto new_n = n->get(lc.first);
-
-		if (new_n) {
-
-			// Our new_used has an extra character being worked on
-			auto new_used = used;
-			new_used.back() += lc.first;
-
-			// Our new unused no longer has this letter
-			auto new_unused = unused;
-			new_unused[lc.first]--;
-			if (new_unused[lc.first] <= 0) new_unused.erase(lc.first);
-
-			// Go one level deeper!
-			anagram_recursively(
-				new_used,
-				new_unused,
-				new_n,
-				consume_all,
-				min_wordlet,
-				max_wordlet,
-				results
+		if (!n->has(lc.first)) continue;
+			
+		// Our new_used has an extra character being worked on
+		auto new_used = used;
+		new_used.back() += lc.first;
+		
+		// Our new unused no longer has this letter
+		auto new_unused = unused;
+		new_unused[lc.first]--;
+		if (new_unused[lc.first] <= 0) new_unused.erase(lc.first);
+		
+		// Go one level deeper!
+		anagram_recursively(
+			new_used,
+			new_unused,
+			root,
+			n->get(lc.first),
+			consume_all,
+			min_wordlet,
+			max_wordlet,
+			results
 			);
-		}
-
 	}
 }
 
@@ -183,7 +204,7 @@ deque<vector<string>> Trie::anagrams(string const& str, bool consume_all, size_t
 	LetterCounts counts;
 	get_letter_counts(str, counts);
 
-	anagram_recursively({ "" }, counts, root, consume_all, min_wordlet, max_wordlet, results);
+	anagram_recursively({ "" }, counts, root, root, consume_all, min_wordlet, max_wordlet, results);
 
   return results;
 }
@@ -194,7 +215,53 @@ deque<vector<string>> Trie::box(vector<string> const& box, bool consume_all, siz
   return results;
 }
 
+void Trie::crossword_recursively(
+	std::vector<string> const& used,
+	std::string str,
+	TrieNode* n,
+	deque<vector<string>>& results
+	) const
+{
+	// More letters left to find
+	if (!str.empty()) {
+		string newstr;
+		if (str.length() > 1) {
+			newstr = str.substr(1, str.length()-1);
+		}
+		
+		auto ch = str.front();
+		
+		// if wildcard, go through all edges
+		if (ch == '?') {
+			for (auto c : n->edges()) {
+				auto new_used = used;
+				new_used.back() += c;
+				crossword_recursively(new_used, newstr, n->get(c), results);
+			}
+		}
+		// does this edge exist?
+		else if (n->has(ch)) {
+			auto new_used = used;
+			new_used.back() += ch;
+			crossword_recursively(new_used, newstr, n->get(ch), results);
+		}
+		// can't exhaust the letters, so we fail
+		else {
+			return;
+		}
+	}
+	// We're all done!
+	else {
+		if (n->get_word()) {
+			results.push_back(used);
+		}
+	}
+}
+
 deque<vector<string>> Trie::crossword(string const& str) const {
   deque<vector<string>> results;
+	
+	crossword_recursively({ "" }, str, root, results);
+	
   return results;	
 }
